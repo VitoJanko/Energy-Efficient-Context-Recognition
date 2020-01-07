@@ -1,5 +1,7 @@
 from ee import dcamodel as dca, eeutility as util, musearch as mu, scamodel as sca
 
+import ee.scamodel2 as s2
+
 from random import choice
 
 import pandas as pd
@@ -264,7 +266,57 @@ class EnergyOptimizer:
 
     def decrypt_solution(self, solution):
         return [self.settings.index(sett) for sett in solution]
-    
+
+    def sca_simple(self, tradeoffs):
+        tradeoffs = self._wrap(tradeoffs)
+        return [self._sca_simple_single(configuration) for configuration in tradeoffs]
+
+    def _sca_simple_single(self, configuration):
+        self._checks(configuration)
+        confusions = [self.setting_to_confusion[setting] for setting in configuration]
+        energies = [self.setting_to_energy[setting] for setting in configuration]
+        return s2.sca_simple_evaluation(self.proportions, confusions, energies, self.quality_metric)
+
+    def sca_model(self, tradeoffs, encrypted=False):
+        tradeoffs = self._wrap(tradeoffs)
+        if encrypted:
+            tradeoffs = self.encrypt_hof(tradeoffs)
+        return [self._sca_model_single(configuration) for configuration in tradeoffs]
+
+    def _sca_model_single(self, configuration, return_cf=False):
+        self._checks(configuration)
+        confusions = [self.setting_to_confusion[setting] for setting in configuration]
+        energies = [self.setting_to_energy[setting] for setting in configuration]
+        quality = (lambda x: x) if return_cf else self.quality_metric
+        return s2.sca_evaluation(self.transitions, confusions, energies, quality)
+
+    def find_sca_tradeoffs(self, solution_type="enumerate", name=None, energy_type="default"):
+        if self.setting_to_confusion is None or self.setting_to_energy is None:
+            raise AssertionError("Confusion matrices or energy estimations missing!")
+        if solution_type not in ["enumerate", "binary"]:
+            raise ValueError("Solution type can be either 'enumerate' or 'binary'")
+        if solution_type == "enumerate":
+            tradeoffs = s2.sca_find_tradeoffs(solution_type, len(self.settings), len(self.contexts), self, NGEN=200)
+            tradeoffs = self.encrypt_hof(tradeoffs)
+        if solution_type == "binary":
+            tradeoffs = s2.sca_find_tradeoffs(solution_type, len(self.settings[0]), len(self.contexts), self, NGEN=200)
+        values = self.sca_model(tradeoffs)
+        if name is not None:
+            self.save_solution(tradeoffs, values, name)
+        return tradeoffs, values
+
+    @staticmethod
+    def _wrap(tradeoffs):
+        if type(tradeoffs[0]) != list:
+            tradeoffs = [tradeoffs]
+        return tradeoffs
+
+    def _checks(self, configuration):
+        if self.setting_to_confusion is None or self.setting_to_energy is None:
+            raise AssertionError("Confusion matrices or energy estimations missing!")
+        if len(configuration) != len(self.contexts):
+            raise ValueError("Assignment length does not match the number of contexts!")
+
     def get_sca_evaluation(self, setting, solution_type = "enumerate", cf = False, energy_type="default"):
         if self.setting_to_confusion is None or self.setting_to_energy is None:
             raise AssertionError("Settings are not set")
@@ -282,7 +334,7 @@ class EnergyOptimizer:
             config = sca.listToConfiguration(setting,problem)
             return problem.markovQualityEnergy(config)
         
-    def get_sca_static(self, name = None):
+    def find_sca_static(self, name = None):
         if self.setting_to_sequence is None or self.setting_to_energy is None:
             raise AssertionError("Settings are not set")
         #h = self.settings
@@ -299,13 +351,13 @@ class EnergyOptimizer:
             self.save_solution(pareto_hof, pareto_sols, name)
         return (pareto_hof, pareto_sols)
     
-    def get_sca_random(self, n_samples=100):
+    def find_sca_random(self, n_samples=100):
         configs = []
         for i in range(n_samples):
             configs.append([choice(self.settings) for _ in range(len(self.contexts))])
         return configs
     
-    def get_dca_random(self, n_samples=100, max_cycles = 10):
+    def find_dca_random(self, n_samples=100, max_cycles = 10):
         configs = []
         for i in range(n_samples):
             configs.append([choice(range(1,max_cycles)) for _ in range(len(self.contexts))])

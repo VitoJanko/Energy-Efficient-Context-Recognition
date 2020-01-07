@@ -2,20 +2,27 @@ from ee import eeoptimizer as eo
 
 #Tester is the main class for all utility functions, path points to the data
 #Ignore warnings at the begining
-tester = eo.EnergyOptimizer(path="Datasets")
+tester = eo.EnergyOptimizer(path="C:\\Users\\VitoJ\\OneDrive\\Desktop\\New folder (2)\\Energy-Efficient-Context-Recognition\\Datasets")
 
 #For each dataset, first load the data and the configuration
 tester.load_data_config("SHL_data", "SHL_config")
 #Optionally, load sample solutions
-sample_solutions, sample_objective = tester.load_solution("SHL_sca")
-sample = [1,1,1,1]
+#sample_solutions, sample_objective = tester.load_solution("SHL_sca")
+sample = tester.encrypt_solution([10,21,31,21,30,21,0,0])
 _, s_stat = tester.get_sca_static()
 print("Max eng:" + str(min(tester.setting_to_energy.values())))
 print("Min eng:" + str(max(tester.setting_to_energy.values())))
 
+print(sample)
 
+print("Tradeoffs")
+h, s = tester.find_sca_tradeoffs(name="temp", solution_type="binary")
+print(h)
+print(s)
 
 #Evaluate a solution (surrogate model). Output: (accuracy, energy), input varies from dataset to dataset
+print("Alt evaluation")
+print(tester.sca_model([sample,sample]))
 print("Surrogate evaluation")
 print(tester.get_sca_evaluation(sample))
 #print(tester.get_model_sca(sample)) for array

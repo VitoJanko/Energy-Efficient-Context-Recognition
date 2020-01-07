@@ -55,7 +55,7 @@ def simplest_estimate(p,length):
 
 def simple_estimate(p,length):
     q = 1-p
-    correct = (1-q**length) / float(1-q) 
+    correct = (1-q**length) / float(1-q)
     return correct/length
 
 
@@ -723,6 +723,7 @@ def calculateHof(hof):
 # In[7]:
 
 def evalDutyAssignment(x, transitions, confusion):
+    result = duty_prediction(transitions, x, confusion = confusion)
     result = duty_prediction(transitions, x, confusion = confusion)
     return (result[0],result[1])
 
