@@ -92,7 +92,7 @@ class EnergyOptimizer:
         self.avg_lengths = util.average_length(self.transitions)
         
     def calc_confusions(self):
-        self.setting_to_confusion = {setting :  util.normalizeMatrix(confusion_matrix(self.sequence,pred,self.contexts), rows=True)
+        self.setting_to_confusion = {setting :  util.normalize_matrix(confusion_matrix(self.sequence, pred, self.contexts), rows=True)
                                          for setting, pred in self.setting_to_sequence.items()}
     
     def get_quality(self):
@@ -152,7 +152,7 @@ class EnergyOptimizer:
             self.calc_enum_problem()
     
     def set_transitions(self, transitions):
-        self.transitions = util.normalizeMatrix(transitions, rows=True)
+        self.transitions = util.normalize_matrix(transitions, rows=True)
         self.proportions = util.get_steady_state(self.transitions)
         self.avg_lengths = util.average_length(self.transitions)
         self.calc_enum_problem()
@@ -241,7 +241,7 @@ class EnergyOptimizer:
         if (cf is None) and (setting is not None) and (self.setting_to_confusion is not None):
             cf = self.setting_to_confusion[setting]
         if cf is not None:
-            cf = util.normalizeMatrix(cf, rows=True)
+            cf = util.normalize_matrix(cf, rows=True)
         return cf
     
     def calc_duty_cost(self,setting, gain):
@@ -266,6 +266,23 @@ class EnergyOptimizer:
 
     def decrypt_solution(self, solution):
         return [self.settings.index(sett) for sett in solution]
+
+    def sca_real(self, tradeoffs, name):
+        tradeoffs = self._wrap(tradeoffs)
+        sequence_true = self.sequence.apply(lambda x: self.contexts.index(x))
+        solutions = [self._sca_real_single(configuration,sequence_true) for configuration in tradeoffs]
+        if name is not None:
+            self.save_solution(tradeoffs, solutions, name)
+        return solutions
+
+    def _sca_real_single(self, configuration, sequence_true, use_energy_sequence=False):
+        sequences = [self.setting_to_sequence[s].apply(lambda x: self.contexts.index(x)) for s in configuration]
+        energy_costs = [self.setting_to_energy[s] for s in configuration]
+        energy_sequences = None
+        if use_energy_sequence:
+            energy_sequences = [self.setting_to_energy_sequence[s] for s in configuration]
+        return dca.test_sca_dca(sequence_true, sequences, [1] * len(self.contexts), energy_costs,
+                                      self.sensors_off, self.quality_metric, 1, energy_sequences)
 
     def sca_simple(self, tradeoffs):
         tradeoffs = self._wrap(tradeoffs)

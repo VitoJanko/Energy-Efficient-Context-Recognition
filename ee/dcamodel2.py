@@ -7,35 +7,36 @@ from deap import algorithms
 import random
 
 
-def dca_simple_evaluation(p, length):
-    q = 1-p
-    correct = (1-q**length) / float(1-q)
-    return correct/length
+#def dca_simple_evaluation(p, length, cf):
+#    q = 1-p
+#    correct = (1-q**length) / float(1-q)
+#    return correct/length
 
 
-def dca_evaluation(transitions, lengths, energy_costs=1, energy_off=0, confusion=None, active=1):
-    a = 2
-    a = not a
+def dca_evaluation(transitions, lengths, evaluator, energy_costs=1, energy_off=0, confusion=None, active=1,
+                   prob=None, sleeping_exp=None, working_exp=None, max_length=None):
     if type(lengths) == int:
         lengths = [lengths]*len(transitions)
     if type(energy_costs) == int:
         energy_costs = [energy_costs]*len(transitions)
     if confusion is None:
         confusion = [[1 if i == j else 0 for j in range(len(lengths))] for i in range(len(lengths))]
-    confusion = util.normalizeMatrix(confusion, rows=True)
-    accuracy, precision, recall, matrix, spared = predict_duty_confusion_alt(transitions, lengths, confusion, active)
+    #confusion = util.normalizeMatrix(confusion, rows=True)
+    if prob is None:
+        if max_length is None:
+            max_length = max(lengths)+1
+        prob, sleeping_exp, working_exp = precalculate(transitions, max_length, active)
+    matrix, spared, avg_energy = _duty_predict(transitions, lengths, prob, sleeping_exp, working_exp,
+                                               confusion=confusion, active=active,
+                                               energy_costs=energy_costs)
+    quality = evaluator(matrix)
+    energy = _duty_energy(spared+1, energy_off, avg_energy)
+    return quality, energy
 
-    prob, sleeping_exp, working_exp = _precalculate(transitions, max_length, active)
-    matrix, spared, evg_energy = _duty_predict_fast(transitions, lengths, prob, sleeping_exp, working_exp,
-                                                    confusion=confusion, active=active,
-                                                    energy_costs=energy_costs)
-    quality, energy = _values(matrix, spared, avg_energ, energy_off)
-    return accuracy, spared, matrix
 
-
-def dca_find_tradeoffs(length, maxCycle, evaluator, NGEN=200, gen_size=200, indpb=0.05, seeded=False, save_history=False,
-                     verbose=False):
-    creator.create("Fitness", base.Fitness, weights=(1.0, 1.0))
+def dca_find_tradeoffs(length, maxCycle, evaluator, NGEN=200, gen_size=200, indpb=0.05, seeded=False,
+                       save_history=False, verbose=False):
+    creator.create("Fitness", base.Fitness, weights=(1.0, -1.0))
     creator.create("Individual", list, fitness=creator.Fitness)
     toolbox = base.Toolbox()
     toolbox.register("attr_bool", random.randint, 1, maxCycle)
@@ -59,14 +60,7 @@ def dca_find_tradeoffs(length, maxCycle, evaluator, NGEN=200, gen_size=200, indp
     return hof
 
 
-def _mutate(sequence, indpb=0.05, length = 30):
-    for i in range(len(sequence)):
-        if random.random()<indpb:
-            sequence[i] = random.randint(1, length)
-    return (sequence,)
-
-
-def _precalculate(transition, max_length, active=1):
+def precalculate(transition, max_length, active=1):
     l = len(transition)
     expected_sleeping_all = {}
     expected_active_all = {}
@@ -84,14 +78,21 @@ def _precalculate(transition, max_length, active=1):
     return probs_all, expected_sleeping_all, expected_active_all
 
 
+def _mutate(sequence, indpb=0.05, length = 30):
+    for i in range(len(sequence)):
+        if random.random()<indpb:
+            sequence[i] = random.randint(1, length)
+    return (sequence,)
+
+
 def _reduce_opposite(fn, start, n_times=3):
     for _ in range(n_times):
         start = fn(start)
         yield start
 
 
-def _duty_predict_fast(transition, lengths, prob, sleeping_exp, working_exp, confusion=None, active=1,
-                      energy_costs=None):
+def _duty_predict(transition, lengths, prob, sleeping_exp, working_exp, confusion=None, active=1,
+                  energy_costs=None):
     if confusion is None:
         confusion = [[1 if i == j else 0 for j in range(len(lengths))] for i in range(len(lengths))]
     confusion = np.array(confusion)
@@ -130,3 +131,9 @@ def _duty_predict_fast(transition, lengths, prob, sleeping_exp, working_exp, con
     spared = (spared - 1) / active
 
     return matrix, spared, avg_energy
+
+
+def _duty_energy(gain, base_off, base_on):
+    prop_on = 1 / float(gain)
+    prop_off = (gain-1) / float(gain)
+    return prop_off*base_off + prop_on*base_on

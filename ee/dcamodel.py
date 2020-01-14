@@ -431,7 +431,7 @@ def duty_prediction(transition, lengths, confusion=None, active = 1):
     if type(lengths) == int:
         lengths = [lengths]*len(transition)
     if not confusion is None:
-        confusion = util.normalizeMatrix(confusion, rows = True)
+        confusion = util.normalize_matrix(confusion, rows = True)
     accuracy, precision, recall, matrix, spared = predict_duty_confusion_alt(transition, lengths, confusion, active)
     return accuracy, spared, matrix
 
@@ -442,7 +442,7 @@ def duty_prediction_sca(transition, lengths, energies, confusion=None, active = 
     if type(lengths) == int:
         lengths = [lengths]*len(transition)
     if not confusion is None:
-        confusion = util.normalizeMatrix(confusion, rows = True)
+        confusion = util.normalize_matrix(confusion, rows = True)
     accuracy, precision, recall, matrix, spared,  avg_energy= predict_duty_sca(transition, lengths, energies, confusion, active)
     return accuracy, spared, matrix, avg_energy
 
@@ -453,7 +453,7 @@ def duty_test(seq, lengths, confusion = None, active = 1):
     if type(lengths) == int:
         lengths = [lengths]*len(pd.Series(seq).unique())
     if not confusion is None:
-        confusion = util.normalizeMatrix(confusion, rows = True)
+        confusion = util.normalize_matrix(confusion, rows = True)
         
     #active = active -1
     seq, correct, precisions, recalls, spared =  test_duty_diverse_confusion_active(seq, lengths, confusion, active)

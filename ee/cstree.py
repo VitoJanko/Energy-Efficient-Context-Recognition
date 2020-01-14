@@ -38,8 +38,7 @@ class CostSensitiveTree():
              extension = self.extension, default=self.default, weight = self.weight)
         tree.node = self.node
         return tree
-        
-    
+
     def set_weight(self, weight):
         self.weight = weight
         self.cost_function = self.calc_cost_function(self.original_cost_function, self.weight)     
@@ -48,7 +47,7 @@ class CostSensitiveTree():
         if feature_groups is not None and type(feature_groups) == list:
             self.feature_groups = feature_groups
         elif feature_groups is not None and type(feature_groups) == dict:
-            self.feature_groups = feature_groups.values()
+            self.feature_groups = list(feature_groups.values())
         else:
             sensors = list(set(feature_groups.values()))
             self.feature_groups = [[] for _ in range(len(sensors))]

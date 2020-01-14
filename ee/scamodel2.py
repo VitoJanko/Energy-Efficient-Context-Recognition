@@ -7,14 +7,14 @@ from deap import algorithms
 import random
 
 
-def sca_evaluation(transitions, confusions, energies, quality_fn):
+def sca_evaluation(transitions, confusions, energies, quality_fn, matrix_energy=False):
     markov_chain = _transition_matrix(transitions, confusions)
     steady_state = util.get_steady_state_trans(markov_chain)
     steady_state_square = np.reshape(steady_state, (int(len(steady_state)**0.5), int(len(steady_state)**0.5)))
     if not (steady_state_square > -0.00001).all():
         return -float("inf"), float("inf")
     quality = quality_fn(steady_state_square)
-    energy = _energy(steady_state_square, energies)
+    energy = _energy(steady_state_square, energies, matrix_energy)
     return quality, energy
 
 
@@ -25,7 +25,7 @@ def sca_simple_evaluation(proportions, confusions, energies, quality_fn):
     return quality, energy
 
 
-def sca_find_tradeoffs(setting_type, num_settings, num_contexts, optimizer, NGEN=50, MU=50):
+def sca_find_tradeoffs(setting_type, num_settings, num_contexts, optimizer, NGEN=50, MU=50, cstree=False):
     creator.create("Fitness", base.Fitness, weights=(1.0, -1.0))
     creator.create("Individual", list, fitness=creator.Fitness)
     toolbox = base.Toolbox()
@@ -40,7 +40,8 @@ def sca_find_tradeoffs(setting_type, num_settings, num_contexts, optimizer, NGEN
         toolbox.register("individual", tools.initRepeat, creator.Individual,
                               toolbox.attr_int, num_contexts)
         toolbox.register("mutate", _mutate_list, indpb=0.05, max_length=num_settings-1)
-        toolbox.register("evaluate", lambda x: optimizer.sca_model(_list_to_config(x, num_contexts), encrypted=True)[0])
+        toolbox.register("evaluate", lambda x: optimizer.sca_model(_list_to_config(x, num_contexts),
+                                                                   encrypted=True, cstree=cstree)[0])
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     toolbox.register("mate", tools.cxTwoPoint)
     toolbox.register("select", tools.selNSGA2)
@@ -81,6 +82,9 @@ def _transition_matrix(transitions, confusions):
     return np.array(chain)
 
 
-def _energy(steady_state_square, energies):
+def _energy(steady_state_square, energies, matrix_energy):
     steady_sum = np.sum(list(map(lambda x: np.real(x), steady_state_square)), axis=0).T
-    return np.dot(energies, steady_sum)
+    if not matrix_energy:
+        return np.dot(energies, steady_sum)
+    else:
+        return np.sum(np.multiply(steady_state_square, np.array(energies).T))
