@@ -1,5 +1,5 @@
 from ee import eeoptimizer as eo
-from ee import eeoptimizer2 as eo2
+from ee import eeoptimizer as eo2
 import pandas as pd
 
 from ee.cstree import CostSensitiveTree
