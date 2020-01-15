@@ -34,8 +34,7 @@ def dca_evaluation(transitions, lengths, evaluator, energy_costs=1, energy_off=0
     return quality, energy
 
 
-def dca_find_tradeoffs(length, maxCycle, evaluator, NGEN=200, gen_size=200, indpb=0.05, seeded=False,
-                       save_history=False, verbose=False):
+def dca_find_tradeoffs(length, maxCycle, evaluator, NGEN=200, gen_size=200, indpb=0.05, seeded=False, verbose=False):
     creator.create("Fitness", base.Fitness, weights=(1.0, -1.0))
     creator.create("Individual", list, fitness=creator.Fitness)
     toolbox = base.Toolbox()

@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 
-
+# TODO:  Line 26 indexes
 def cstree_borders(cs_tree, x1, y1, x2, y2, contexts, x_p=None, y_p=None, test_fn=None,
                    buffer_range=1, use_energy_sequence=False,
-                   weights_range=None, energy_range=None, n_tree=15):
+                   weights_range=None, energy_range=None, n_tree=15, verbose=False):
     setting_to_sequence = {}
     setting_to_energy = {}
     setting_to_energy_matrix = {}
@@ -25,6 +25,8 @@ def cstree_borders(cs_tree, x1, y1, x2, y2, contexts, x_p=None, y_p=None, test_f
         y1c = y1[cond]
         x1c = x1[cond]
         for weight in weights:
+            if verbose:
+                print(f'Evaluating: {(context,weight)}')
             setting = (context, weight)
             cs_tree.set_weight(weight)
             cs_tree.fit(x1c, y1c, x_p, y_p)

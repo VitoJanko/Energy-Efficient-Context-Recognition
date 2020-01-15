@@ -12,6 +12,7 @@ import pickle
 
 # TODO: Error handling
 # TODO: Double loading
+# TODO: Related work
 class EnergyOptimizer:
 
     def __init__(self, sequence=None, contexts=None, setting_to_energy=None, setting_to_sequence=None,
@@ -103,6 +104,7 @@ class EnergyOptimizer:
         self.set_settings(self.setting_to_sequence, self.setting_to_energy)
         self.save_config(name)
 
+    # TODO: This is a slightly inaccurate way to report accuracy
     def get_quality(self):
         return {s: self.quality_metric((self.setting_to_confusion[s].T * self.proportions).T) for s in self.settings}
 
@@ -219,7 +221,7 @@ class EnergyOptimizer:
         if cstree:
             energies = [self.setting_to_energy_matrix[setting] for setting in configuration]
         quality = (lambda x: x) if return_cf else self.quality_metric
-        return sca.sca_evaluation(self.transitions, confusions, energies, quality)
+        return sca.sca_evaluation(self.transitions, confusions, energies, quality, matrix_energy=cstree)
 
     def find_sca_tradeoffs(self, binary_representation=False, name=None, cstree=False):
         if self.setting_to_confusion is None or self.setting_to_energy is None:
@@ -231,7 +233,7 @@ class EnergyOptimizer:
         else:
             tradeoffs = sca.sca_find_tradeoffs("binary", len(self.settings[0]), len(self.contexts),
                                                self, NGEN=200, cstree=cstree)
-        values = self.sca_model(tradeoffs)
+        values = self.sca_model(tradeoffs, cstree=cstree)
         self.save_solution(tradeoffs, values, name)
         return tradeoffs, values
 
@@ -316,17 +318,13 @@ class EnergyOptimizer:
         mx = self.sensors_on
         if (setting is not None) and (self.setting_to_energy is not None):
             mx = self.setting_to_energy[setting]
+        if energy_costs is None:
+            energy_costs = mx
 
         def evl(x):
-            dca.dca_evaluation(transitions=self.transitions, lengths=x, active=active, confusion=cf,
-                               evaluator=self.quality_metric, prob=prob, sleeping_exp=sleeping,
-                               working_exp=working, energy_off=self.sensors_off, energy_costs=mx)
-        if energy_costs is not None:
-            def evl(x):
-                dca.dca_evaluation(transitions=self.transitions, lengths=x, active=active, confusion=cf,
-                                   evaluator=self.quality_metric, prob=prob, sleeping_exp=sleeping,
-                                   working_exp=working, energy_off=self.sensors_off,
-                                   energy_costs=energy_costs)
+            return dca.dca_evaluation(transitions=self.transitions, lengths=x, active=active, confusion=cf,
+                                      evaluator=self.quality_metric, prob=prob, sleeping_exp=sleeping,
+                                      working_exp=working, energy_off=self.sensors_off, energy_costs=energy_costs)
 
         tradeoffs = dca.dca_find_tradeoffs(len(self.contexts), max_cycle, evl, seeded=seeded, NGEN=ngen)
         solutions = [evl(h) for h in tradeoffs]
@@ -465,11 +463,11 @@ class EnergyOptimizer:
         return trees
 
     def add_csdt_borders(self, cs_tree, x1, y1, x2, y2, x_p=None, y_p=None, test_fn=None,
-                         buffer_range=1, name=None, use_energy_sequence=False,
+                         buffer_range=1, name=None, use_energy_sequence=False, verbose=False,
                          weights_range=None, energy_range=None, n_tree=15):
         config = gen.cstree_borders(cs_tree, x1, y1, x2, y2, self.contexts, x_p, y_p, test_fn,
                                     buffer_range, use_energy_sequence,
-                                    weights_range, energy_range, n_tree)
+                                    weights_range, energy_range, n_tree, verbose)
         self._initialize_settings()
         setting_to_sequence, setting_to_energy, setting_to_energy_matrix, setting_to_energy_sequence, trees = config
         self._update_settings(setting_to_sequence, setting_to_energy, setting_to_energy_matrix,
