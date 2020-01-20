@@ -1,8 +1,8 @@
 from ee import eeutility as util
 import ee.scamodel as sca
 import ee.dcamodel as dca
-import generators as gen
-import tester
+import ee.generators as gen
+import ee.tester as test
 
 from random import choice
 import pandas as pd
@@ -46,14 +46,31 @@ class EnergyOptimizer:
             self.set_settings(setting_to_sequence, setting_to_energy)
 
     def set_sequence(self, sequence):
+        """
+        Sets the sequence of contexts that will be used for testing the energy-efficiency of settings.
+        :param sequence (list): A sequence of contexts. Their ordering and proportions should be
+        representative for the domain.
+        """
         self.sequence = pd.Series(sequence).reset_index(drop=True)
         self._calc_contexts()
         self._calc_transitions()
 
     def set_path(self, path):
+        """
+        Sets the path to a folder from which the data is loaded and to which data is saved
+        :param path (string): absolute or relative path to a folder
+        """
         self.path = path
 
     def set_settings(self, setting_to_sequence, setting_to_energy=None, setting_fn_energy=None):
+        """
+        Defines the possible settings (their performance and energy) for the optimization.
+        :param setting_to_sequence (dictionary): Keys of this dictionary are the possible settings, the values are lists
+        of contexts. Each list represent the original sequence, classified using the corresponding setting.
+        :param setting_to_energy (dictionary):
+        :param setting_fn_energy (function): If the setting_to_energy parameter is None, this function will be used to
+        calculate energy from each setting defined in setting_to_sequence parameter.
+        """
         if setting_to_energy is None and setting_fn_energy is None:
             raise AssertionError("Either setting_to_energy or setting_fn_energy must not be None")
         self.setting_to_energy = setting_to_energy
@@ -65,6 +82,12 @@ class EnergyOptimizer:
             self._calc_confusions()
 
     def set_dca_costs(self, cost_off, cost_on):
+        """
+        Sets the base energy costs for the DCA method.
+        :param cost_off (float): The energy cost when the system is sleeping.
+        :param cost_on (float): The energy cost when the system is working. If a setting is specified when using any
+        of the DCA methods, this value will be ignored. The energy cost of that setting will be used instead.
+        """
         self.sensors_on = cost_on
         self.sensors_off = cost_off
 
@@ -105,31 +128,57 @@ class EnergyOptimizer:
         self.save_config(name)
 
     # TODO: This is a slightly inaccurate way to report accuracy
-    def get_quality(self):
+    def quality(self):
+        """
+        Returns a summary of all settings and their classification performances
+        :return (dictionary): Keys are possible settings, values their classification performance according the
+        specified quality metric.
+        """
         return {s: self.quality_metric((self.setting_to_confusion[s].T * self.proportions).T) for s in self.settings}
 
-    def get_energy_quality(self):
+    def energy_quality(self):
+        """
+        Returns a summary of all settings and their performances
+        :return (dictionary): Keys are possible settings, values a tuple of their classification performance and
+        energy costs.
+        """
         return {s: (self.quality_metric((self.setting_to_confusion[s].T * self.proportions).T),
                     self.setting_to_energy[s])
                 for s in self.settings}
 
-    def get_summary(self):
-        summary = pd.DataFrame()
-        summary["Proportions"] = pd.Series(self.proportions, self.contexts)
-        summary["Average lengths"] = pd.Series(self.avg_lengths, self.contexts)
-        print(summary)
+    def summary(self):
+        """
+        Prints a summary of the dataset.
+        """
+        summa = pd.DataFrame()
+        summa["Proportions"] = pd.Series(self.proportions, self.contexts)
+        summa["Average lengths"] = pd.Series(self.avg_lengths, self.contexts)
+        print(summa)
 
     def load_data_config(self, data_name, config_name):
+        """
+        Loads the sequence and settings information from the files with the specified names.
+        :param data_name (string): absolute or relative path to a file with the sequence
+        :param config_name (string): absolute or relative path to a file with the settings information
+        """
         self.load_data(data_name)
         self.load_config(config_name)
 
     def load_data(self, name):
+        """
+        Loads the sequence from the file with the specified name.
+        :param name (string): absolute or relative path to a file
+        """
         dbfile = open(self.path + "/" + name, 'rb')
         sequence = pickle.load(dbfile)
         dbfile.close()
         self.set_sequence(sequence)
 
     def load_config(self, name):
+        """
+        Loads the settings information (their list, energies and performances) from the file with the specified name.
+        :param name (string): absolute or relative path to a file
+        """
         dbfile = open(self.path + "/" + name, 'rb')
         loaded = pickle.load(dbfile)
         self.settings, self.setting_to_sequence, self.setting_to_energy, self.setting_to_confusion = loaded[0:4]
@@ -139,6 +188,11 @@ class EnergyOptimizer:
         dbfile.close()
 
     def load_solution(self, name):
+        """
+        Loads the solutions from the file with the specified name.
+        :param name (string): absolute or relative path to a file
+        :return (list): a list of different tradeoffs. Each represented by a tuple with the form (quality, energy).
+        """
         dbfile = open(self.path + "/" + name, 'rb')
         loaded = pickle.load(dbfile)
         hof, solutions = loaded
@@ -146,6 +200,10 @@ class EnergyOptimizer:
         return hof, solutions
 
     def save_data(self, name):
+        """
+
+        :param name:
+        """
         if name is not None:
             dbfile = open(self.path + "/" + name, 'wb')
             pickle.dump(self.sequence, dbfile)
@@ -191,7 +249,7 @@ class EnergyOptimizer:
         energy_sequences = None
         if cstree_energy:
             energy_sequences = [self.setting_to_energy_sequence[s] for s in configuration]
-        return tester.test_sca_dca(sequence_true, sequences, [1] * len(self.contexts), energy_costs,
+        return test.test_sca_dca(sequence_true, sequences, [1] * len(self.contexts), energy_costs,
                                    self.sensors_off, self.quality_metric, 1, energy_sequences)
 
     def sca_simple(self, tradeoffs, name=None):
@@ -285,7 +343,7 @@ class EnergyOptimizer:
         return solutions
 
     def _dca_real_single(self, configuration, sequence_true, sequence_predicted, energy, active):
-        return tester.test_sca_dca(sequence_true, [sequence_predicted] * len(self.contexts), configuration,
+        return test.test_sca_dca(sequence_true, [sequence_predicted] * len(self.contexts), configuration,
                                    [energy] * len(self.contexts), self.sensors_off, self.quality_metric, active)
 
     def dca_model(self, tradeoffs, active=1, setting=None, cf=None, max_cycle=None, energy_costs=None, name=None):
@@ -358,7 +416,7 @@ class EnergyOptimizer:
             energy_sequences = None
             if cstree_energy:
                 energy_sequences = [self.setting_to_energy_sequence[s] for s in config[0]]
-            return tester.test_sca_dca(sequence_true, sequences, config[1], energy_costs,
+            return test.test_sca_dca(sequence_true, sequences, config[1], energy_costs,
                                        self.sensors_off, self.quality_metric, active, energy_sequences)
         else:
             return self.sca_real(config)[0]

@@ -56,8 +56,9 @@ def get_steady_state(p):
     return np.linalg.solve(QTQ, bQT)
 
 
+# TODO: fix conditional
 def average_length(matrix):
-    return [1.0/(1-matrix[i][i]) for i in range(len(matrix))]
+    return [1.0/(1-matrix[i][i]) if matrix[i][i] < 1 else 3 for i in range(len(matrix))]
 
 
 def pareto_dominance(lst):
@@ -92,7 +93,7 @@ def f1_from_conf(conf):
     return sum(f1_single(conf, i) for i in range(len(conf)))/len(conf)
 
 
-def draw_graph(plots, labels, xlim = None, ylim=None, name=None, reverse=False, pareto=False,
+def draw_tradeoffs(plots, labels, xlim = None, ylim=None, name=None, reverse=True, pareto=False,
                short=False, points=None, folder="artificial", percentage=True, percentage_energy=False,
                scatter_indices=None, color_indices=None, text_factor=50, ylabel="Energy", dotted_indices=None,
                thick_indices=None, xlabel="Classification error"):

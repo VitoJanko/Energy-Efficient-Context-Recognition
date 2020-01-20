@@ -5,6 +5,15 @@ from ee.cstree import CostSensitiveTree
 
 #Tester is the main class for all utility functions, path points to the data
 #Ignore warnings at the begining
+classified = {}
+classified["a"] = [0,0,0,0,  2,1,2,1,  2,2,2,0]
+classified["b"] = [0,0,0,0,  1,1,1,2,  0,1,2,2]
+classified["c"] = [1,1,1,1,  1,1,1,1,  1,1,1,1]
+classified["d"] = [0,0,0,0,  1,1,1,1,  2,2,2,2]
+classified["e"] = [0,0,0,0,  0,0,0,0,  2,2,2,2]
+sequence = [0,0,0,0,  1,1,1,1,  2,2,2,2]
+energy = {"a":2, "b":2, "c":1, "d":3, "e":1}
+eo.EnergyOptimizer(sequence=sequence, setting_to_sequence=classified, setting_to_energy=energy)
 tester = eo.EnergyOptimizer(path="C:\\Users\\vito\\Desktop\\EnergyEfficient\\Datasets")
 
 
