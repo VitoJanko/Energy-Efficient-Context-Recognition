@@ -93,10 +93,58 @@ def f1_from_conf(conf):
     return sum(f1_single(conf, i) for i in range(len(conf)))/len(conf)
 
 
+def pareto_solutions(configurations, tradeoffs):
+    solutions = [(1-a, e, h) for (a,e),h in zip(tradeoffs, configurations)]
+    pareto_points = pareto_dominance(solutions)
+    conf_pareto = [h for a, e, h in pareto_points]
+    trade_pareto = [(1-a, e) for a, e, h in pareto_points]
+    return conf_pareto, trade_pareto
+
+
 def draw_tradeoffs(plots, labels, xlim = None, ylim=None, name=None, reverse=True, pareto=False,
                short=False, points=None, folder="artificial", percentage=True, percentage_energy=False,
                scatter_indices=None, color_indices=None, text_factor=50, ylabel="Energy", dotted_indices=None,
                thick_indices=None, xlabel="Classification error"):
+    """
+    A tool for quick visualization of different trade-offs.
+
+    Essentially a wrapper around matplotlib.pyplot that makes drawing and comparing different sets
+    of trade-offs easier. As an input it expects a list of trade-offs and can plot them in the
+    way that is standard for Pareto fronts: step-wise with the quality axis reversed so that the
+    ideal point
+    lies in the lower-left corner. It streamlines some other aspects, for example labeling, saving
+    and making sure only Pareto-optimal points are drawn.
+
+    While some utility parameters are presents for modifying the look of the graph, it is recommended
+    to use  matplotlib.pyplot library directly for any complex drawing task.
+
+    :param plots: a list of one or more trade-off sets. Each trade-off set is for example a result
+                  of a different energy-optimization function. They can be represented in two
+                  different ways. Either as list of tuples (each tuples representing quality, energy)
+                  or a tuple of two lists (first list containing quality, second energy). All outputs
+                  returned from energy-optimization functions already fit this criteria.
+    :param labels: a list of labels in the same order as the trade-offs in the ``plots`` parameter
+    :param xlim: a tuple with min and max for x-axis
+    :param ylim: a tuple with min and max for y-axis
+    :param name: None or name of a file where the figure is saved
+    :param reverse: reverses the x-axis
+    :param pareto: only Pareto-optimal points are drawn
+    :param short: if true, the graph will be drawn as square instead of a rectangle
+    :param points: a list of points of to be drawn [(x1,y1,s1), (x2,y2,s2)]. s1, s2, etc. are
+                   optional and provide a way to annotate points
+    :param folder: None or name of a folder where the figure is saved
+    :param percentage: multiplies the x-axis by 100 (in order to transform the accuracy of 0.45 into
+                       45%)
+    :param percentage_energy: multiplies the x-axis by 100
+    :param scatter_indices: indices of trade-offs sets that should be drawn un-connected
+    :param color_indices: if not None, each element of this list determines the index of a color
+                          (trade-offs with the same index will be drawn with the same color)
+    :param text_factor: changing this parameter moves the label from/away the annotated ``points``
+    :param ylabel: label for the y-axis
+    :param dotted_indices: indices of trade-offs sets that should be drawn with dots
+    :param thick_indices: indices of trade-offs sets that should be drawn thicker than the rest
+    :param xlabel: label for the x-axis
+    """
     cmap = plt.get_cmap("tab10")
     if short:
         plt.figure(figsize=(10,10))

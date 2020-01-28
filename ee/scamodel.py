@@ -26,6 +26,10 @@ def sca_simple_evaluation(proportions, confusions, energies, quality_fn):
 
 
 def sca_find_tradeoffs(setting_type, num_settings, num_contexts, optimizer, NGEN=50, MU=50, cstree=False):
+    if hasattr(creator, 'Fitness'):
+        del creator.Fitness
+    if hasattr(creator, 'Individual'):
+        del creator.Individual
     creator.create("Fitness", base.Fitness, weights=(1.0, -1.0))
     creator.create("Individual", list, fitness=creator.Fitness)
     toolbox = base.Toolbox()

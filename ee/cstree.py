@@ -1,14 +1,35 @@
 
-# coding: utf-8
-
-# In[1]:
 from ee import simpletree as st, sharingtree as sht
 
 
-class CostSensitiveTree():
+class CostSensitiveTree:
     
-    def __init__(self,contexts, cost_function, feature_to_sensor = None, feature_groups = None, 
-                 tree_type = "default", min_samples = 1, extension = 0, default = None, weight = 1):
+    def __init__(self,contexts, cost_function, feature_to_sensor=None, feature_groups=None,
+                 tree_type="default", min_samples=1, extension=0, default=None, weight=1):
+        """
+        Constructor for the cost-sensitive decision tree.
+
+        Either (but not both) ``feature_to_sensor`` or ``feature_groups`` must be set.
+
+        :param contexts: a list of contexts to be recognized
+        :param cost_function: maps a set of sensors into the energy cost
+        :param feature_to_sensor: a dictionary that maps each attribute to a sensor
+        :param feature_groups: a dictionary that maps each sensor to a list of attributes
+        :param tree_type: there are three types of trees that can be generated: "default", "pruned"
+                          and "batched". The pruned version prunes the tree using a dedicated pruning
+                          set after tree generation. "batched" version tries to place attributes that
+                          share energy costs as close together as possible. This results in a longer
+                          train time, but usually slightly better performance
+        :param min_samples: the minimum number of samples in a non-leaf node
+        :param extension: if this is set as >0 the tree building process will sometimes expand nodes
+                          even if energy-inefficient in anticipation that the decision will pay off
+                          later in the tree. It prunes these branches if the anticipation proves to be
+                          wrong. This results in a longer
+                          train time, but usually slightly better performance (in practice
+                          extension=1 proved best)
+        :param default: context to be classified in case of an empty tree
+        :param weight: weight of the energy cost when compared to the misclassification cost
+        """
         if tree_type not in ["default", "pruned", "batched"]:
             raise ValueError("tree_type must be 'default', 'pruned', or 'batched'")
         self.tree_type = tree_type
@@ -53,8 +74,7 @@ class CostSensitiveTree():
             self.feature_groups = [[] for _ in range(len(sensors))]
             for k,v in feature_groups.items():
                 self.feature_groups[sensors.index(v)].append(k)
-        
-                    
+
     def calc_feature_to_sensor(self,feature_groups):
         self.feature_to_sensor ={}
         if type(feature_groups) == dict:
@@ -75,7 +95,15 @@ class CostSensitiveTree():
         self.miscls = {self.contexts[j] : 
                        {self.contexts[i] : c for (i,c) in enumerate(row)} for (j,row) in enumerate(miscls_0)}
     
-    def fit(self,x1, y1, x_p = None, y_p = None):
+    def fit(self,x1, y1, x_p=None, y_p=None):
+        """
+        Trains the tree classifier
+
+        :param x1: a pandas dataframe of attributes to be used as the training set
+        :param y1: a pandas series of labels for the instances in ``x1``
+        :param x_p: (optional) a pandas dataframe of attributes to be used as the pruning set
+        :param y_p: (optional) a pandas series of labels for the instances in ``x_p``
+        """
         if x_p is None:
             x_p = x1
             y_p = y1
@@ -97,9 +125,15 @@ class CostSensitiveTree():
                                  default=self.default)     
     
     def predict(self,x2):
+        """
+        Tests the tree classifier
+
+        :param x2: a pandas dataframe of attributes to be used as the test set
+        :return: a list of predictions, where the i-th element is the prediction for i-th row in x2
+        """
         return [self.node.classify(row) for index, row in x2.iterrows()]
     
-    def energy(self, x, original_cost_function=None, weight = 1):
+    def energy(self, x, original_cost_function=None, weight=1):
         if original_cost_function is None:
             original_cost_function = self.original_cost_function
             cost_function = self.calc_cost_function(self.original_cost_function, weight)
@@ -107,9 +141,17 @@ class CostSensitiveTree():
             cost_function = self.calc_cost_function(original_cost_function, weight)
         return self.node.energy(x,None,cost_function=cost_function) + weight*original_cost_function([])
         
+    def show(self):
+        """
+        Prints the structure of the tree.
+        """
+        self.node.show()
 
-
-# In[ ]:
+    def show_sensors(self):
+        """
+        Prints the structure of the tree, abstracted so only different sensors are shown.
+        """
+        print(self.node.show_semantic(self.feature_to_sensor)[1])
 
 def overall_cost(current, history, costs, fn = None, att_to_sensor = None):
     sensor_set = set()

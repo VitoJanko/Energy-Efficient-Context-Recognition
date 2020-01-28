@@ -1,7 +1,44 @@
 from ee import eeoptimizer as eo
+from ee import eeutility as util
 import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
 
 from ee.cstree import CostSensitiveTree
+
+activities = ["still","still", "walk", "walk","run","run","car","car","subway","subway"]
+gps_velocity = [0,1,0,1,0,1,66,68,66,68]
+acc_motion = [0,1,4,5,4,5,0,1,0,1]
+acc_period = [5,4,5,4,10,11,5,4,5,4]
+mag_field = [48,49,48,49,48,49,48,49,102,203]
+data = pd.DataFrame()
+data["gps_velocity"] = gps_velocity
+data["acc_motion"] = acc_motion
+data["acc_period"] = acc_period
+data["mag_field"] = mag_field
+data["activity"] = activities
+x = data.drop(["activity"], axis=1)
+y = data["activity"]
+contexts = y.unique()
+
+classifier = DecisionTreeClassifier()
+optimizer = eo.EnergyOptimizer(y)
+
+feature_groups = {"acc": ["acc_motion", "acc_period"], "gps": ["gps_velocity"], "mag":["mag_field"]}
+
+def sensor_costs(setting):
+    print(setting)
+    cost = 20
+    if setting[0] == 1:
+        cost += 10
+    if setting[1] == 1:
+        cost+=30
+    if setting[2] == 1:
+        cost+=15
+    return cost
+
+optimizer.add_subsets(x,y,x,y,classifier, feature_groups=feature_groups, n = 3,
+                     setting_to_energy = sensor_costs)
+
 
 #Tester is the main class for all utility functions, path points to the data
 #Ignore warnings at the begining
@@ -20,11 +57,38 @@ tester = eo.EnergyOptimizer(path="C:\\Users\\vito\\Desktop\\EnergyEfficient\\Dat
 
 #For each dataset, first load the data and the configuration
 #tester.load_data_config("Gib_data", "gib_config_cs")
-tester.load_data("Gib_data")
-#tester2.load_data_config("SHL_data", "SHL_config")
+#tester.load_data("Gib_data")
+tester.load_data_config("SHL_data", "SHL_config")
 #tester2.load_data("Gib_data")
 #Optionally, load sample solutions
 #sample_solutions, sample_objective = tester.load_solution("SHL_sca")
+
+h2, s2, = tester.find_sca_tradeoffs(name="sca_test")
+
+#h4, s4 = tester.load_solution("dca_test")
+max_setting = sorted(tester.quality().items(), key=lambda x: -x[1])[0][0]
+
+h4, s4 = tester.find_dca_tradeoffs(name="dca_test", max_cycle=30, setting=max_setting)
+h5, s5 = tester.find_aimd_tradeoffs(name="aimd_test")
+print(h5)
+print(s5)
+util.draw_tradeoffs([s4, s5], ["dca", "episodic"], scatter_indices=[])
+
+h3, s3, = tester.find_simple_tradeoffs(name="simple_test")
+print(h3)
+print(s3)
+h, s = tester.load_solution("coh_test")
+
+#util.draw_tradeoffs([s, s3],["coh", "simple"], scatter_indices=[1])
+
+h, s, = tester.find_coh_tradeoffs(name="coh_test")
+h2, s2, = tester.find_sca_tradeoffs(name="sca_test")
+print(s)
+print(s2)
+s2r = tester.sca_real(h2)
+print(s2r)
+util.draw_tradeoffs([s, s2r],["coh","sca"])
+
 
 frequencies = [1,2,5,10,20,30,40,50]
 y1 = pd.Series(pd.read_csv("C:\\Users\\vito\\Desktop\\EnergyEfficient\\Datasets\\y1_df.csv",

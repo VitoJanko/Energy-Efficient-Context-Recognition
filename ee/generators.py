@@ -123,6 +123,7 @@ def general_subsets(x1, y1, x2, y2, classifier, contexts, proportions, setting_t
         if fill_energy:
             if not csdt:
                 setting_to_energy[tuple(setting)] = setting_fn_energy(setting)
+                classifiers[tuple(setting)] = classifier
             else:
                 energy = classifier.energy(x2, csdt_fn_energy)
                 energy_matrix = [classifier.energy(x2[y2 == act], csdt_fn_energy) for act in contexts]
