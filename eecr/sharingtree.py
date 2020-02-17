@@ -3,7 +3,7 @@
 
 # In[1]:
 
-from ee import simpletree as st
+from eecr import simpletree as st
 
 
 # In[1]:

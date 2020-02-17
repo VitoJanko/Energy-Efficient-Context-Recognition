@@ -1,15 +1,15 @@
-from ee import eeoptimizer as eo
-from ee import eeutility as util
+from eecr import eeoptimizer as eo
+from eecr import eeutility as util
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 
-from ee.cstree import CostSensitiveTree
+from eecr.cstree import CostSensitiveTree
 
 activities = ["still","still", "walk", "walk","run","run","car","car","subway","subway"]
-gps_velocity = [0,1,0,1,0,1,66,68,66,68]
-acc_motion = [0,1,4,5,4,5,0,1,0,1]
-acc_period = [5,4,5,4,10,11,5,4,5,4]
-mag_field = [48,49,48,49,48,49,48,49,102,203]
+gps_velocity = [0, 1, 0, 1, 0, 1, 66, 68, 66, 68]
+acc_motion = [0, 1, 4, 5, 4, 5, 0, 1, 0, 1]
+acc_period = [5, 4, 5, 4, 10, 11, 5, 4, 5, 4]
+mag_field = [48, 49, 48, 49, 48, 49, 48, 49, 102, 203]
 data = pd.DataFrame()
 data["gps_velocity"] = gps_velocity
 data["acc_motion"] = acc_motion

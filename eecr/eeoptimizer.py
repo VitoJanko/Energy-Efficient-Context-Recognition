@@ -1,9 +1,9 @@
-from ee import eeutility as util
-import ee.scamodel as sca
-import ee.dcamodel as dca
-import ee.generators as gen
-import ee.tester as test
-import ee.altmethods as alt
+from eecr import eeutility as util
+import eecr.scamodel as sca
+import eecr.dcamodel as dca
+import eecr.generators as gen
+import eecr.tester as test
+import eecr.altmethods as alt
 
 from random import choice
 import pandas as pd
@@ -204,7 +204,7 @@ class EnergyOptimizer:
         summa["Average lengths"] = pd.Series(self.avg_lengths, self.contexts)
         print(summa)
 
-    def load_data_config(self, data_name, config_name):
+    def load_data_config(self, data_name, config_name, sample_file=None):
         """
         Loads the sequence and settings information from files.
 
@@ -214,8 +214,12 @@ class EnergyOptimizer:
         :param data_name: relative path to a file with the sequence
         :param config_name: relative path to a file with the settings information
         """
-        self.load_data(data_name)
-        self.load_config(config_name)
+        if sample_file is not None:
+            if sample_file == "SHL":
+                self.load_data_config("SHL_data", "SHL_config")
+        else:
+            self.load_data(data_name)
+            self.load_config(config_name)
 
     def load_data(self, name):
         """
@@ -984,7 +988,7 @@ class EnergyOptimizer:
         of possible settings.
 
         :param cs_tree: the base cost-sensitive tree object
-                        (:class:`ee.cstree.CostSensitiveTree`) to use for generation of
+                        (:class:`eecr.cstree.CostSensitiveTree`) to use for generation of
                         its variants
         :param x1: a pandas dataframe of attributes to be used as the training set
         :param y1: a pandas series of labels for the instances in ``x1``
@@ -1032,7 +1036,7 @@ class EnergyOptimizer:
         Generated CS-DT get added to the list of possible settings.
 
         :param cs_tree: the base cost-sensitive tree object
-                        (:class:`ee.cstree.CostSensitiveTree`) to use for generation of
+                        (:class:`eecr.cstree.CostSensitiveTree`) to use for generation of
                         its variants
         :param x1: a pandas dataframe of attributes to be used as the training set
         :param y1: a pandas series of labels for the instances in ``x1``

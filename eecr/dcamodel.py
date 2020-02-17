@@ -1,5 +1,5 @@
 import numpy as np
-import ee.eeutility as util
+import eecr.eeutility as util
 from deap import base
 from deap import creator
 from deap import tools

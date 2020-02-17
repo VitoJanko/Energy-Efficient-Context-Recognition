@@ -1,5 +1,5 @@
 
-from ee import simpletree as st, sharingtree as sht
+from eecr import simpletree as st, sharingtree as sht
 
 
 class CostSensitiveTree:
