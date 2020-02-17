@@ -5,6 +5,14 @@ from sklearn.tree import DecisionTreeClassifier
 
 from eecr.cstree import CostSensitiveTree
 
+import os
+
+print(os.path.dirname(__file__))
+
+tester = eo.EnergyOptimizer()
+tester.load_data_config(sample_dataset="SHL")
+print("huh")
+
 activities = ["still","still", "walk", "walk","run","run","car","car","subway","subway"]
 gps_velocity = [0, 1, 0, 1, 0, 1, 66, 68, 66, 68]
 acc_motion = [0, 1, 4, 5, 4, 5, 0, 1, 0, 1]
@@ -51,7 +59,7 @@ classified["e"] = [0,0,0,0,  0,0,0,0,  2,2,2,2]
 sequence = [0,0,0,0,  1,1,1,1,  2,2,2,2]
 energy = {"a":2, "b":2, "c":1, "d":3, "e":1}
 eo.EnergyOptimizer(sequence=sequence, setting_to_sequence=classified, setting_to_energy=energy)
-tester = eo.EnergyOptimizer(path="C:\\Users\\vito\\Desktop\\EnergyEfficient\\Datasets")
+tester = eo.EnergyOptimizer(path="/Datasets")
 
 
 
@@ -91,12 +99,12 @@ util.draw_tradeoffs([s, s2r],["coh","sca"])
 
 
 frequencies = [1,2,5,10,20,30,40,50]
-y1 = pd.Series(pd.read_csv("C:\\Users\\vito\\Desktop\\EnergyEfficient\\Datasets\\y1_df.csv",
+y1 = pd.Series(pd.read_csv("/Datasets\\y1_df.csv",
                            index_col=0, names=["activity"])["activity"])
-y2 = pd.Series(pd.read_csv("C:\\Users\\vito\\Desktop\\EnergyEfficient\\Datasets\\y2_df.csv",
+y2 = pd.Series(pd.read_csv("/Datasets\\y2_df.csv",
                            index_col=0, names=["activity"])["activity"])
-x1 = pd.read_csv("C:\\Users\\vito\\Desktop\\EnergyEfficient\\Datasets\\x1_df.csv", index_col=0)
-x2 = pd.read_csv("C:\\Users\\vito\\Desktop\\EnergyEfficient\\Datasets\\x2_df.csv", index_col=0)
+x1 = pd.read_csv("/Datasets\\x1_df.csv", index_col=0)
+x2 = pd.read_csv("/Datasets\\x2_df.csv", index_col=0)
 
 k = 22/45.0
 n = 24-5*k
@@ -115,7 +123,7 @@ node = CostSensitiveTree(tester.contexts,
 tester.add_csdt_borders(node, x1, y1, x2, y2, buffer_range=5, weights_range=(0, 0.01), use_energy_sequence=True,
                         verbose=True, name="gib_config_cs_border")
 
-tester = eo.EnergyOptimizer(path="C:\\Users\\vito\\Desktop\\EnergyEfficient\\Datasets")
+tester = eo.EnergyOptimizer(path="/Datasets")
 tester.load_data("Gib_data")
 
 tester.add_csdt_weighted(node, x1, y1, x2, y2, weights_range=(0, 0.01), use_energy_sequence=True,

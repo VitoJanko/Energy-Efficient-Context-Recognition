@@ -10,6 +10,7 @@ import pandas as pd
 from sklearn.metrics import confusion_matrix
 import pickle
 import numpy as np
+import os
 
 
 # TODO: Error handling
@@ -204,7 +205,7 @@ class EnergyOptimizer:
         summa["Average lengths"] = pd.Series(self.avg_lengths, self.contexts)
         print(summa)
 
-    def load_data_config(self, data_name, config_name, sample_file=None):
+    def load_data_config(self, data_name=None, config_name=None, sample_dataset=None):
         """
         Loads the sequence and settings information from files.
 
@@ -213,10 +214,15 @@ class EnergyOptimizer:
 
         :param data_name: relative path to a file with the sequence
         :param config_name: relative path to a file with the settings information
+        :param sample_dataset: if specified, a sample dataset will be loaded (currently only "SHL"
+                               keyword works)
         """
-        if sample_file is not None:
-            if sample_file == "SHL":
+        if sample_dataset is not None:
+            if sample_dataset == "SHL":
+                temp = self.path
+                self.path = os.path.join(os.path.dirname(__file__), './Datasets')
                 self.load_data_config("SHL_data", "SHL_config")
+                self.path = test
         else:
             self.load_data(data_name)
             self.load_config(config_name)

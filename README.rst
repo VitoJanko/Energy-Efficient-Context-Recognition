@@ -1,5 +1,37 @@
-Overview
+Goal
 ========
+This library help to automatically optimize the settings of a context recognition project in order to
+make it more energy-efficient. Given possible settings (e.g. different sensors) the goal is to
+decide when to use them. E.g. Use accelerometer when detecting walking but use gps when driving is
+detected.
+
+Installation
+=============
+Run the following to install:
+
+```python
+pip install eecr
+```
+
+Usage
+======
+For extensive examples check the documentation at https://dis.ijs.si/eecr/
+
+.. code-block:: python
+
+    from eecr import EnergyOptimizer
+    optimizer = EnergyOptimizer(sequence=sequence, #a list of contexts - ground truth for current task,
+                                setting_to_sequence=setting_to_sequence, #a dictionary that maps each setting
+                                                                         #to a list of predictions using that setting
+                                setting_to_energy=setting_to_energy,     #a dictionary that maps each setting
+                                                                         #to the energy cost of that setting
+                                )
+    solutions_sca, values_sca = optimizer.find_sca_tradeoffs()
+    for (s,v) in zip(solutions_sca, values_sca):
+        print (s, v)
+
+Description
+============
 
 Widespread accessibility of wearable sensing devices opens many possibilities for tracking the users who wear them. Possible applications range from measuring their exercise patterns and checking on their health, to determining their location. In this documentation we will use the term context-recognition for all these tasks.
 

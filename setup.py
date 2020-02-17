@@ -12,7 +12,12 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/x-rst",
     url="https://github.com/VitoJanko/Energy-Efficient-Context-Recognition",
+    project_urls={
+            "Documentation": "https://dis.ijs.si/eecr/",
+        },
     packages=['eecr'],
+    keywords="context recognition awareness classification energy consumption optimization",
+    include_package_data=True,
     #packages=setuptools.find_packages(),
     #package_dir={"": "eecr"},
     #py_modules=["eeoptimizer","eeutility","altmethods"],
